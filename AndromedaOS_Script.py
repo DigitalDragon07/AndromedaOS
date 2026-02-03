@@ -38,11 +38,11 @@ userData = {
 confidentialInformation = {
     "appsOnHomescreen": [],
     "appsAvailable": [],
-    "appNames": [], #Name of programm declared inside the script
-    "appNamesWithFolder": [], #Format: folderName/scriptName.py | Does not adapt to the name of the script declared in the script
-    "downloadedAppData": {}, #Name is the name of the programm
+    "appNames": [], #Folder name
+    "appNamesWithFolder": [], #Format: folderName/scriptName.py
+    "downloadedAppData": {}, #Folder name
     "defaultApps": ["AppLoader", "Settings"], #Always the folder name
-    "currentApp": "Homescreen", #Name of programm, uses AppNames
+    "currentApp": "Homescreen", #Folder name, uses appNames
 }
 
 sharedDict = {}
@@ -361,13 +361,13 @@ def loadAvailableApps():
                 path = folder + "/" + app
                 tempList.append(path)
                 appWithoutPy = app.replace(".py", "")
-                if defaultApp and not (appWithoutPy in confidentialInformation["downloadedAppData"]):
-                    x = (appWithoutPy in confidentialInformation["downloadedAppData"])
+                if defaultApp and not (folder in confidentialInformation["downloadedAppData"]):
+                    x = (folder in confidentialInformation["downloadedAppData"])
                     print "         now downloading {}".format(path)
                     print "         second is {}".format(x)
-                    print "         conf information is {}".format(confidentialInformation["downloadedAppData"])
+                    print "         conf information is {}".format(confidentialInformation["downloadedAppData"].keys())
                     print "         app name is {}".format(appWithoutPy)
-                    downloadApp(path, True)
+                    downloadApp(path, folder, True)
                 break
     confidentialInformation["appsAvailable"] = tempList
     del App_file
@@ -376,7 +376,7 @@ def loadAvailableApps():
 def getDownloadedApps():
     return confidentialInformation["appNamesWithFolder"]
     
-def downloadApp(appName, noPermissionNeeded = False, additionalData = {}):
+def downloadApp(appName, folderName, noPermissionNeeded = False, additionalData = {}):
     global sharedDict
     global confidentialInformation
     global storagePlace
@@ -391,8 +391,8 @@ def downloadApp(appName, noPermissionNeeded = False, additionalData = {}):
         appSetup = usedDict["appSetup"]
         for l in additionalData:
             appSetup[l] = additionalData[l]
-        confidentialInformation["downloadedAppData"][appSetup["name"]] = appSetup
-        confidentialInformation["appNames"].append(appSetup["name"])
+        confidentialInformation["downloadedAppData"][folderName] = appSetup
+        confidentialInformation["appNames"].append(folderName)
         confidentialInformation["appNamesWithFolder"].append(appName)
         appSetup = {}
         del usedDict
