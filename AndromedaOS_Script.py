@@ -1,0 +1,501 @@
+#Licensed under Auron LTD. For private use only. Piracy will be punished. See License for further information.
+
+#Imports of libraries
+from gturtle import*
+from javax.imageio import ImageIO
+from java.io import File
+from java.awt import Toolkit
+from java.lang import*
+from time import*
+import os
+import math
+import gc
+
+#necessary data (think about repositioning this section so no interference with the function which are stored in a variable occur)
+userSettings = {
+"screenWidth": 1280,
+"screenHeight": 800,
+"verticalSpace": 70,
+"horizontalSpace": 70,
+"maxVerticalSpaceBetweenApps": 100,
+"maxHorizontalSpaceBetweenApps": 150,
+"isUsingDefaultBackground": True,
+"currentBackgroundPath": "/Custom_UI/Backgrounds/",
+"darkMode": False,
+"playIntro": True,
+"doGC": True,
+"ableToClick": True,
+}
+
+storagePlace = os.getcwd().replace("\\", "/")
+
+storagePlaceAsFile = File(storagePlace)
+
+userData = {
+"currentScreen": "Homescreen",
+}
+
+confidentialInformation = {
+    "appsOnHomescreen": [],
+    "appsAvailable": [],
+    "appNames": [], #Name of programm declared inside the script
+    "appNamesWithFolder": [], #Format: folderName/scriptName.py | Does not adapt to the name of the script declared in the script
+    "downloadedAppData": {}, #Name is the name of the programm
+    "defaultApps": ["AppLoader", "Settings"], #Always the folder name
+    "currentApp": "Homescreen", #Name of programm, uses AppNames
+}
+
+sharedDict = {}
+
+#Functions with which Auron runs
+def makeBackground():
+    if (userSettings["isUsingDefaultBackground"]):
+       background = storagePlace + "/Default_UI/Background_1.png"
+    else:
+        background = storagePlace + userSettings["currentBackgroundPath"]
+    background = getImage(background)
+    background = scale(background, autoRescale(1280, 800), 0)
+    drawImage(background, 0, 0)
+    del background
+
+    
+def loadUI():
+    for l in clickableUI.values():
+        if l["file"] != None:
+            t1 = clock()
+            if type(l["file"]) == str:
+                image = l["file"]
+                if l["file"].startswith("C") and l["rescaling"] == None:
+                    drawImage(l["file"], l["CenterPoint"][0], l["CenterPoint"][1])
+                elif l["rescaling"] == None and (not l["file"].startswith("C")):
+                    drawImage(image, l["CenterPoint"][0], l["CenterPoint"][1])
+                elif l["rescaling"] != None and l["file"].startswith("C"):
+                    rescale = rescaleImageWithFaktor(l["file"], l["rescaling"])
+                    if rescale == None:
+                        resclale = 1
+                    drawImage(rescale, l["CenterPoint"][0], l["CenterPoint"][1])
+                elif l["rescaling"] != None and (not l["file"].startswith("C")):
+                    rescale = rescaleImageWithFaktor(image, l["rescaling"])
+                    if rescale == None:
+                        resclale = 1
+                    drawImage(rescale, l["CenterPoint"][0], l["CenterPoint"][1])
+                else:
+                    print "Error in loadUI: Missing Components. Logging important components below:"
+                    print "rescaling:", l["rescaling"], "(Note: Rescale can be None)"
+                    print "file:", l["file"]
+                #print "loaded image was", image
+                del image
+                t2 = clock()
+                #print "time for loading UI is", t2-t1
+            if type(l["file"]) == list:
+                setPenColor(l["file"][4])
+                setPos(l["CenterPoint"][0], l["CenterPoint"][1])
+                style = l["file"][2]
+                rescale = l["rescaling"]
+                maxTextLength = l["file"][6]
+                maxLineBreak = l["file"][5]
+                if rescale == None:
+                    rescale = 1
+                size = l["file"][3]*rescale
+                size = int(round(size))
+                if style == "plain" or style == "Plain":     
+                    setFont(l["file"][1], Font.PLAIN, size)
+                elif style == "bold" or style == "Bold":
+                    setFont(l["file"][1], Font.BOLD, size)
+                elif style == "italic" or style == "Italic":
+                    setFont(l["file"][1], Font.ITALIC, size)
+                else:
+                    raise Exception("Error in text: Not a valid style")
+                if not maxTextLength == None:
+                    amountOfLineBreak = 0
+                    words = l["file"][0].split(" ")
+                    tempList = []
+                    actualList = []
+                    usedSpaceInTempList = 0
+                    for x in words:
+                        if getTextWidth(x) > maxTextLength:
+                            raise Exception("Error in loadUI: Word was longer then maxTextLength")
+                        if maxTextLength < (usedSpaceInTempList + getTextWidth(x)):
+                            actualList.append(tempList)
+                            tempList = []
+                            usedSpaceInTempList = 0
+                            amountOfLineBreak += 1
+                            if amountOfLineBreak > maxLineBreak:
+                                raise Exception("Error in loadUI: exceeded line break limit")
+                        tempList.append(x)
+                        usedSpaceInTempList += getTextWidth(x)
+                    actualList.append(tempList)
+                    i = 1
+                    for x in actualList:
+                        for f in x:
+                            label(f + " ")
+                            setPos(getX() + getTextWidth(f + " "), getY())
+                        setPos(l["CenterPoint"][0], l["CenterPoint"][1]-getTextHeight()*i)
+                        i += 1
+                else:
+                    label(l["file"][0])
+    if userSettings["doGC"]:
+        gc.collect()
+        Runtime.getRuntime().gc()
+            
+def loadHomescreen():
+    t1 = clock()
+    makeBackground()
+    t2 = clock()
+    loadAvailableApps()
+    t3 = clock()
+    addAppsToHomescreen() 
+    t4 = clock()
+    #print t2-t1, t3-t2, t4-t3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+    
+def onMousePressed(x, y):
+    global clickableUI
+    global userSettings
+    for l in clickableUI.values():
+        if ("Corner1" in l) and ("Corner2" in l):
+            if l["Corner1"] != [] and l["Corner2"] != []:
+                maxx = max(l["Corner1"][0], l["Corner2"][0])
+                minx = min(l["Corner1"][0], l["Corner2"][0])
+                maxy = max(l["Corner1"][1], l["Corner2"][1])
+                miny = min(l["Corner1"][1], l["Corner2"][1])
+                if x < maxx and x > minx and y < maxy and y > miny:
+                    if (l["linkedFunction"] != None):
+                        func = l["linkedFunction"]
+                        if "appName" in l:
+                            openApp(l["appName"])
+                        func()
+                        break
+    print "------------------------------------------------"
+            
+def onMouseMoved(x, y):
+    pass  
+            
+def getPictureSize(image_file): #Add security check that file exists!
+    img_file = File(image_file)
+    image = ImageIO.read(img_file)
+    width = image.getWidth()
+    height = image.getHeight()
+    del img_file
+    del image
+    return [width, height]
+
+def rescaleImageWithSize(image_file, newSize, hasToBeSquare = False, preferedSide = "x"):
+    pictureSize = getPictureSize(image_file)
+    if (hasToBeSquare and (pictureSize[0] != pictureSize[1])):
+        print "Error in rescaleImage: Picture was not a square"
+        return
+    if (preferedSide == "x"):
+        factor = newSize/pictureSize[0]
+    else:
+        factor = newSize/pictureSize[1]
+    newImageFile = getImage(image_file)
+    newImage = scale(newImageFile, factor, 0)
+    del newImageFile
+    del pictureSize
+    return [newImage, factor]
+
+def rescaleImageWithFaktor(image_file, newSizeAsFaktor, hasToBeSquare = False):
+    pictureSize = getPictureSize(image_file)
+    if (hasToBeSquare and (pictureSize[0] != pictureSize[1])):
+        print "Error in rescaleImage: Picture was not a square"
+        return
+    newImageFile = getImage(image_file)
+    newImage = scale(newImageFile, newSizeAsFaktor, 0)
+    return newImage
+
+def autoRescale(currentScreenWidth, currentScreenHight, currentFactor = 1, prefferWidth = True):
+    newScreenWidth = int(userSettings["screenWidth"])
+    newScreenHeight = int(userSettings["screenHeight"])
+    if prefferWidth:
+        factor = newScreenWidth/currentScreenWidth
+    else:
+        factor = newScreenHeight/currentScreenHight
+    return factor*currentFactor
+
+def testScript():
+    print "hi"
+    
+def addUICorners():
+    global clickabelUI
+    for x in clickableUI.values():
+        if x["file"] != None:
+            if type(x["file"]) ==  str:
+                pictureSize = getPictureSize(x["file"])
+                x["Corner1"] = [x["CenterPoint"][0]-(pictureSize[0]/2)*x["rescaling"], x["CenterPoint"][1]-(pictureSize[0]/2)*x["rescaling"]]
+                x["Corner2"] = [x["CenterPoint"][0]+(pictureSize[1]/2)*x["rescaling"], x["CenterPoint"][1]+(pictureSize[1]/2)*x["rescaling"]]
+            elif type(x["file"]) == list:
+                x["Corner1"] = [x["CenterPoint"][0], x["CenterPoint"][1]-x["file"][7]*getTextHeight()]
+                if x["file"][7] == 0:
+                    x["Corner2"] = [getTextWidth(x["file"][0]) + x["CenterPoint"][0], getTextHeight()  + x["CenterPoint"][1]]
+                else:
+                    x["Corner2"] = [x["file"][6] + x["CenterPoint"][0], getTextHeight()  + x["CenterPoint"][1]]
+            
+def test():
+    print "Test successful"
+
+def addAppsToHomescreen():
+    global homescreenUI
+    global clickableUI
+    global confidentialInformation
+    global userSettings
+    verticalDistance = 100000
+    horizontalDistance = 100000
+    verticalApps = 0
+    horizontalApps = 0
+    width = userSettings["screenWidth"]
+    height = userSettings["screenHeight"]
+    t1 = clock()
+    while verticalDistance > userSettings["maxVerticalSpaceBetweenApps"]:
+        verticalApps += 1
+        check = height - 2*userSettings["verticalSpace"]
+        verticalDistance = check // verticalApps
+    while horizontalDistance > userSettings["maxHorizontalSpaceBetweenApps"]:
+        horizontalApps += 1
+        check = width - 2*userSettings["horizontalSpace"]
+        horizontalDistance = check // horizontalApps
+    t2 = clock()
+    centerpointY = height/2 - userSettings["verticalSpace"]
+    centerpointX = 0 - (width/2 - userSettings["horizontalSpace"])
+    counter = 1
+    homescreenUI = {}
+    print "appnameswithfolder is", confidentialInformation["appNamesWithFolder"]
+    for app in confidentialInformation["appNamesWithFolder"]:
+        folder = str(app.split("/").pop(0))
+        theFile = str(storagePlace + "/Applications/" + folder + "/" + confidentialInformation["downloadedAppData"][confidentialInformation["appNames"][counter-1]]["icon"])
+        homescreenUI[app] = {
+            "CenterPoint": [centerpointX, centerpointY],
+            "Corner1":[],
+            "Corner2": [],
+            "linkedFunction": confidentialInformation["downloadedAppData"][confidentialInformation["appNames"][counter-1]]["openingFunction"],
+            "file": theFile,
+            "rescaling": autoRescale(1280, 800, rescaleImageWithSize(theFile, 300/4)[1]),
+            "appName": confidentialInformation["appNames"][counter-1],}
+        centerpointY -= verticalDistance
+        if (counter >= (verticalApps*horizontalApps)):
+            print "Error in addAppsToHomescreen: Had to load more apps than space available"
+            break
+        if (counter % verticalApps) == 0:
+            centerpointY = height/2 - userSettings["verticalSpace"]
+            centerpointX += horizontalDistance
+        counter += 1
+    #print "homescreenUI is:", homescreenUI
+    clickableUI = homescreenUI
+    t3 = clock()
+    addUICorners()
+    t4 = clock()
+    loadUI()
+    t5 = clock()
+    #print "inside:", round(t2-t1, 2), t3-t2, t4-t3, t5-t4
+    del verticalApps
+    del verticalDistance
+    del horizontalApps
+    del horizontalDistance
+    
+def closeApp():
+    global confidentialInformation
+    if confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["closingFunction"] != None:
+        confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["closingFunction"]()
+    confidentialInformation["currentApp"] = "Homescreen"
+    loadHomescreen()
+    
+def openApp(appName):
+    global clickableUI
+    global storagePlace
+    global confidentialInformation
+    #sleep(0.15)
+    clear()
+    if type(confidentialInformation["downloadedAppData"][appName]["domains"]["main"]["background"]) == str:
+        background = storagePlace + confidentialInformation["downloadedAppData"][appName]["domains"]["main"]["background"]
+        drawImage(background)
+    else:
+        setPenColor("White")
+        dot(10000)
+    clickableUI = confidentialInformation["downloadedAppData"][appName]["domains"]["main"]["clickableUI"]
+    for l in neededUI:
+        clickableUI[l] = neededUI[l]
+    print "app name is", appName
+    confidentialInformation["currentApp"] = appName
+    addUICorners()
+    loadUI()
+    
+def updateDomain(newDomain, callingFunction = None):
+    global clickableUI
+    global storagePlace
+    if newDomain in confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["domains"]:
+        clickableUI = confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["domains"][newDomain]["clickableUI"]
+        for l in neededUI:
+            clickableUI[l] = neededUI[l]
+        if type(confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["domains"][newDomain]["background"]) == str:
+            background = storagePlace + confidentialInformation["downloadedAppData"][currentidentialInformation["currentApp"]]["domains"][newDomain]["background"]
+            drawImage(background)
+        else:
+            setPenColor("White")
+            dot(10000)
+        loadUI()
+        addUICorners()
+    else:
+        print "Error in updateDomain: domain doesn't exist"
+        return
+    if callingFunction != None:
+        if type(callingFunction) == list:
+            for x in callingFunction:
+                x()
+        else:
+            callingFunction()
+
+def loadAvailableApps():
+    global confidentialInformation
+    tempList = []
+    confidentialInformation["appsAvailable"] = []
+    App_file = File(storagePlace + "/Applications" ).list()
+    print "app file si", App_file
+    for folder in App_file:
+        print "     folder is", folder
+        App_file2 = File(storagePlace + "/Applications/" + folder).list()
+        defaultApp = False
+        if folder in confidentialInformation["defaultApps"]:
+            defaultApp = True
+        print "appFile2 is", App_file2
+        for app in App_file2:
+            if (app.endswith(".py")):
+                path = folder + "/" + app
+                tempList.append(path)
+                appWithoutPy = app.replace(".py", "")
+                if defaultApp and not (appWithoutPy in confidentialInformation["downloadedAppData"]):
+                    x = (appWithoutPy in confidentialInformation["downloadedAppData"])
+                    print "         now downloading {}".format(path)
+                    print "         second is {}".format(x)
+                    print "         conf information is {}".format(confidentialInformation["downloadedAppData"])
+                    print "         app name is {}".format(appWithoutPy)
+                    downloadApp(path, True)
+                break
+    confidentialInformation["appsAvailable"] = tempList
+    del App_file
+    return tempList
+
+def getDownloadedApps():
+    return confidentialInformation["appNamesWithFolder"]
+    
+def downloadApp(appName, noPermissionNeeded = False, additionalData = {}):
+    global sharedDict
+    global confidentialInformation
+    global storagePlace
+    global sharedDict
+    usedDict = sharedDict.copy()
+    print "bfore:", confidentialInformation["appNamesWithFolder"]
+    if noPermissionNeeded or confirmDownload():
+        if appName.split("/")[0] in confidentialInformation["defaultApps"]:
+            for l in additionalSharedDict:
+                usedDict[l] = additionalSharedDict[l]
+        execfile(storagePlace + "/Applications/" + appName, usedDict)#if nameError: storagePlace not defined appears, look that the shared dict is defined before
+        appSetup = usedDict["appSetup"]
+        for l in additionalData:
+            appSetup[l] = additionalData[l]
+        confidentialInformation["downloadedAppData"][appSetup["name"]] = appSetup
+        confidentialInformation["appNames"].append(appSetup["name"])
+        confidentialInformation["appNamesWithFolder"].append(appName)
+        appSetup = {}
+        del usedDict
+        if confidentialInformation["currentApp"] == "Homescreen":
+            addAppsToHomescreen()
+        return True
+    else:
+        return False
+
+def confirmDownload():
+    installApplication = askYesNo("                                                                    Warning!\nApps which are added additionally could contain malicious code.\nOnly proceed if you trust the developer of this app. If your not sure please contact Oclona Studios. Du you want to install this application?", False)
+    if installApplication == None:
+        installApplication = False
+    return installApplication
+
+def validateApp(appName):
+    pass
+
+def updateAppSetup(newAppSetup):
+    currentApp = confidentialInformation["currentApp"]
+    confidentialInformation["downloadedAppData"][currentApp] = newAppSetup
+
+def storeData(nameOfData, data, storeInSystem = False):
+    currentApp = confidentialInformation["currentApp"]
+    appBefore = currentApp
+    if currentApp == "Homescreen" or storeInSystem:
+        currentApp = "System"
+    if not os.path.exists(storagePlace + "/Data/" + currentApp):
+        os.mkdir(storagePlace + "/Data/" + currentApp)
+    with open(storagePlace + "/Data/" + currentApp + "/" + nameOfData, "w+") as f:
+        f.write(str(data))
+    currentApp = appBefore
+    
+def getData(nameOfData):
+    currentApp = confidentialInformation["currentApp"]
+    appBefore = currentApp
+    if currentApp == "Homescreen":
+        currentApp = "System"
+        isSystem = True
+    else:
+        currentApp = confidentialInformation["currentApp"]
+        isSystem = False
+    if os.path.exists(storagePlace + "/Data/" + currentApp + "/" + nameOfData):
+        with open(storagePlace + "/Data/" + currentApp + "/" + nameOfData, "r") as f:
+            return f.read()
+    else:
+        print "Error in getData: file doesn't exist."
+        print "Searched place for getData:", storagePlace + "/Data/" + currentApp + "/" + nameOfData
+    if isSystem:
+        currentApp = "Homescreen"
+        
+def text(text, size, **settings):
+    #available settings: font, style, color, maxLineBreak, maxTextLength
+    if "color" in settings:
+        color = settings["color"]
+    else:
+        color = "Black"
+    if "font" in settings:
+        font = settings["font"]
+    else:
+        font = "Calibri"
+    if "style" in settings:
+        style = settings["style"]
+    else:
+        style = "plain"
+    if "maxLineBreak" in settings:
+        maxLineBreak = settings["maxLineBreak"]
+    else:
+        maxLineBreak = 100000
+    if "maxTextLength" in settings:
+        maxTextLength = settings["maxTextLength"]
+    else:
+        maxTextLength = None
+    if maxTextLength != None:
+        neededBreaks = getTextWidth(text)//maxTextLength
+    else:
+        neededBreaks = 0
+    return [text, font, style, size, color, maxLineBreak, maxTextLength, neededBreaks]
+
+#Starting procedure
+gc.collect()
+Runtime.getRuntime().gc()
+setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
+makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved)
+setPenColor("White")
+sharedDict = {"test": test, "storagePlace": storagePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFaktor": rescaleImageWithFaktor, "storeData": storeData, "getData": getData, "text": text, "userSettings": userSettings}
+additionalSharedDict = {"downloadApp": downloadApp, "loadAvailableApps": loadAvailableApps, "getDownloadedApps": getDownloadedApps}
+
+neededUI = {
+"ExitSign":{
+    "CenterPoint": [userSettings["screenWidth"]/2-autoRescale(1280, 800, 0.03)*getPictureSize(storagePlace + "/Default_UI/Buttons/red-x.png")[0]/2, userSettings["screenHeight"]/2-autoRescale(1280, 800, 0.03)*getPictureSize(storagePlace + "/Default_UI/Buttons/red-x.png")[1]/2-8],
+    "Corner1":[],
+    "Corner2": [],
+    "linkedFunction": closeApp,
+    "file": (storagePlace + "/Default_UI/Buttons/red-x.png"),
+    "rescaling": 0.03},
+}
+
+ht()
+homescreenUI = {}
+loadHomescreen()
+
+#Testing & Debugging
+
+gc.collect()
+Runtime.getRuntime().gc()
