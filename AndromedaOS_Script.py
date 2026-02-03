@@ -499,3 +499,4 @@ loadHomescreen()
 
 gc.collect()
 Runtime.getRuntime().gc()
+print "Hello World"
