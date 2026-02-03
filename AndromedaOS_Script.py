@@ -10,6 +10,7 @@ from time import*
 import os
 import math
 import gc
+import copy
 
 #necessary data (think about repositioning this section so no interference with the function which are stored in a variable occur)
 userSettings = {
@@ -28,12 +29,6 @@ userSettings = {
 }
 
 storagePlace = os.getcwd().replace("\\", "/")
-
-storagePlaceAsFile = File(storagePlace)
-
-userData = {
-"currentScreen": "Homescreen",
-}
 
 confidentialInformation = {
     "appsOnHomescreen": [],
@@ -165,7 +160,6 @@ def onMousePressed(x, y):
                             openApp(l["appName"])
                         func()
                         break
-    print "------------------------------------------------"
             
 def onMouseMoved(x, y):
     pass  
@@ -258,7 +252,6 @@ def addAppsToHomescreen():
     centerpointX = 0 - (width/2 - userSettings["horizontalSpace"])
     counter = 1
     homescreenUI = {}
-    print "appnameswithfolder is", confidentialInformation["appNamesWithFolder"]
     for app in confidentialInformation["appNamesWithFolder"]:
         folder = str(app.split("/").pop(0))
         theFile = str(storagePlace + "/Applications/" + folder + "/" + confidentialInformation["downloadedAppData"][confidentialInformation["appNames"][counter-1]]["icon"])
@@ -278,7 +271,6 @@ def addAppsToHomescreen():
             centerpointY = height/2 - userSettings["verticalSpace"]
             centerpointX += horizontalDistance
         counter += 1
-    #print "homescreenUI is:", homescreenUI
     clickableUI = homescreenUI
     t3 = clock()
     addUICorners()
@@ -313,7 +305,6 @@ def openApp(appName):
     clickableUI = confidentialInformation["downloadedAppData"][appName]["domains"]["main"]["clickableUI"]
     for l in neededUI:
         clickableUI[l] = neededUI[l]
-    print "app name is", appName
     confidentialInformation["currentApp"] = appName
     addUICorners()
     loadUI()
@@ -348,14 +339,11 @@ def loadAvailableApps():
     tempList = []
     confidentialInformation["appsAvailable"] = []
     App_file = File(storagePlace + "/Applications" ).list()
-    print "app file si", App_file
     for folder in App_file:
-        print "     folder is", folder
         App_file2 = File(storagePlace + "/Applications/" + folder).list()
         defaultApp = False
         if folder in confidentialInformation["defaultApps"]:
             defaultApp = True
-        print "appFile2 is", App_file2
         for app in App_file2:
             if (app.endswith(".py")):
                 path = folder + "/" + app
@@ -363,10 +351,6 @@ def loadAvailableApps():
                 appWithoutPy = app.replace(".py", "")
                 if defaultApp and not (folder in confidentialInformation["downloadedAppData"]):
                     x = (folder in confidentialInformation["downloadedAppData"])
-                    print "         now downloading {}".format(path)
-                    print "         second is {}".format(x)
-                    print "         conf information is {}".format(confidentialInformation["downloadedAppData"].keys())
-                    print "         app name is {}".format(appWithoutPy)
                     downloadApp(path, folder, True)
                 break
     confidentialInformation["appsAvailable"] = tempList
@@ -375,6 +359,12 @@ def loadAvailableApps():
 
 def getDownloadedApps():
     return confidentialInformation["appNamesWithFolder"]
+
+def getStoragePlace():
+    return storagePlace
+
+def getUserSettings():
+    return copy.deepcopy(userSettings)
     
 def downloadApp(appName, folderName, noPermissionNeeded = False, additionalData = {}):
     global sharedDict
@@ -382,7 +372,6 @@ def downloadApp(appName, folderName, noPermissionNeeded = False, additionalData 
     global storagePlace
     global sharedDict
     usedDict = sharedDict.copy()
-    print "bfore:", confidentialInformation["appNamesWithFolder"]
     if noPermissionNeeded or confirmDownload():
         if appName.split("/")[0] in confidentialInformation["defaultApps"]:
             for l in additionalSharedDict:
@@ -478,7 +467,7 @@ Runtime.getRuntime().gc()
 setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
 makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved)
 setPenColor("White")
-sharedDict = {"test": test, "storagePlace": storagePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFaktor": rescaleImageWithFaktor, "storeData": storeData, "getData": getData, "text": text, "userSettings": userSettings}
+sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFaktor": rescaleImageWithFaktor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings}
 additionalSharedDict = {"downloadApp": downloadApp, "loadAvailableApps": loadAvailableApps, "getDownloadedApps": getDownloadedApps}
 
 neededUI = {
