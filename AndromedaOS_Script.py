@@ -226,7 +226,7 @@ def addUICorners():
 def test():
     print "Test successful"
 
-def addAppsToHomescreen():
+def calculateAppDistance():
     global homescreenUI
     global clickableUI
     global confidentialInformation
@@ -247,10 +247,26 @@ def addAppsToHomescreen():
         check = width - 2*userSettings["horizontalSpace"]
         horizontalDistance = check // horizontalApps
 #    t2 = clock()
+    storeData("verticalApps", verticalApps, "appDistance")
+    storeData("verticalDistance", verticalDistance, "appDistance")
+    storeData("horizontalApps", horizontalApps, "appDistance")
+    storeData("horizontalDistance", horizontalDistance, "appDistance")
+    
+def addAppsToHomescreen():
+    global homescreenUI
+    global clickableUI
+    global confidentialInformation
+    global userSettings
+    width = userSettings["screenWidth"]
+    height = userSettings["screenHeight"]
     centerpointY = height/2 - userSettings["verticalSpace"]
     centerpointX = 0 - (width/2 - userSettings["horizontalSpace"])
     counter = 1
     homescreenUI = {}
+    verticalApps = eval(getData("verticalApps", "appDistance"))
+    verticalDistance = eval(getData("verticalDistance", "appDistance"))
+    horizontalApps = eval(getData("horizontalApps", "appDistance"))
+    horizontalDistance = eval(getData("horizontalDistance", "appDistance"))
     for app in confidentialInformation["appNamesWithFolder"]:
         folder = str(app.split("/").pop(0))
         theFile = str(storagePlace + "/Applications/" + folder + "/" + confidentialInformation["downloadedAppData"][confidentialInformation["appNames"][counter-1]]["icon"])
@@ -350,7 +366,7 @@ def loadAvailableApps():
                 appWithoutPy = app.replace(".py", "")
                 if defaultApp and not (folder in confidentialInformation["downloadedAppData"]):
                     x = (folder in confidentialInformation["downloadedAppData"])
-                    downloadApp(path, folder, True)
+                    downloadApp(path, True)
                 break
     confidentialInformation["appsAvailable"] = tempList
     del App_file
@@ -365,14 +381,15 @@ def getStoragePlace():
 def getUserSettings():
     return copy.deepcopy(userSettings)
     
-def downloadApp(appName, folderName, noPermissionNeeded = False, additionalData = {}):
+def downloadApp(appName, noPermissionNeeded = False, additionalData = {}):
     global sharedDict
     global confidentialInformation
     global storagePlace
     global sharedDict
     usedDict = sharedDict.copy()
     if noPermissionNeeded or confirmDownload():
-        if appName.split("/")[0] in confidentialInformation["defaultApps"]:
+        folderName = appName.split("/")[0]
+        if folderName in confidentialInformation["defaultApps"]:
             for l in additionalSharedDict:
                 usedDict[l] = additionalSharedDict[l]
         execfile(storagePlace + "/Applications/" + appName, usedDict)#if nameError: storagePlace not defined appears, look that the shared dict is defined before
@@ -403,14 +420,14 @@ def updateAppSetup(newAppSetup):
     currentApp = confidentialInformation["currentApp"]
     confidentialInformation["downloadedAppData"][currentApp] = newAppSetup
 
-def storeData(nameOfData, data, additionalPath = ""): #, storeInSystem = False
+def storeData(nameOfData, data, additionalFolderPath = ""): #, storeInSystem = False
     currentApp = confidentialInformation["currentApp"]
     if currentApp == "Homescreen":# or storeInSystem:
         currentApp = "System"
     if not os.path.exists(storagePlace + "/Data/" + currentApp):
         os.mkdir(storagePlace + "/Data/" + currentApp)
     alreadyMadePath = "/"
-    for l in additionalPath.split("/"):
+    for l in additionalFolderPath.split("/"):
         if not os.path.exists(storagePlace + "/Data/" + currentApp + alreadyMadePath + l):
             os.mkdir(storagePlace + "/Data/" + currentApp + alreadyMadePath + l)
         alreadyMadePath += l + "/"
@@ -479,6 +496,7 @@ neededUI = {
 
 ht()
 homescreenUI = {}
+calculateAppDistance()
 loadHomescreen()
 
 #Testing & Debugging
