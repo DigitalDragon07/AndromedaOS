@@ -1,4 +1,4 @@
-#Licensed under Auron LTD. For private use only. Piracy will be punished. See License for further information.
+#Licensed under AndromedaOS LTD. For private use only. Piracy will be punished. See License for further information.
 
 #Imports of libraries
 from gturtle import*
@@ -42,7 +42,7 @@ confidentialInformation = {
 
 sharedDict = {}
 
-#Functions with which Auron runs
+#Functions with which AndromedaOS runs
 def makeBackground():
     if (userSettings["isUsingDefaultBackground"]):
        background = storagePlace + "/Default_UI/Background_1.png"
@@ -52,7 +52,6 @@ def makeBackground():
     background = scale(background, autoRescale(1280, 800), 0)
     drawImage(background, 0, 0)
     del background
-
     
 def loadUI():
     for l in clickableUI.values():
@@ -65,12 +64,12 @@ def loadUI():
                 elif l["rescaling"] == None and (not l["file"].startswith("C")):
                     drawImage(image, l["CenterPoint"][0], l["CenterPoint"][1])
                 elif l["rescaling"] != None and l["file"].startswith("C"):
-                    rescale = rescaleImageWithFaktor(l["file"], l["rescaling"])
+                    rescale = rescaleImageWithFactor(l["file"], l["rescaling"])
                     if rescale == None:
                         resclale = 1
                     drawImage(rescale, l["CenterPoint"][0], l["CenterPoint"][1])
                 elif l["rescaling"] != None and (not l["file"].startswith("C")):
-                    rescale = rescaleImageWithFaktor(image, l["rescaling"])
+                    rescale = rescaleImageWithFactor(image, l["rescaling"])
                     if rescale == None:
                         resclale = 1
                     drawImage(rescale, l["CenterPoint"][0], l["CenterPoint"][1])
@@ -188,13 +187,13 @@ def rescaleImageWithSize(image_file, newSize, hasToBeSquare = False, preferedSid
     del pictureSize
     return [newImage, factor]
 
-def rescaleImageWithFaktor(image_file, newSizeAsFaktor, hasToBeSquare = False):
+def rescaleImageWithFactor(image_file, newSizeAsFactor, hasToBeSquare = False):
     pictureSize = getPictureSize(image_file)
     if (hasToBeSquare and (pictureSize[0] != pictureSize[1])):
         print "Error in rescaleImage: Picture was not a square"
         return
     newImageFile = getImage(image_file)
-    newImage = scale(newImageFile, newSizeAsFaktor, 0)
+    newImage = scale(newImageFile, newSizeAsFactor, 0)
     return newImage
 
 def autoRescale(currentScreenWidth, currentScreenHight, currentFactor = 1, prefferWidth = True):
@@ -406,24 +405,17 @@ def updateAppSetup(newAppSetup):
 
 def storeData(nameOfData, data, storeInSystem = False):
     currentApp = confidentialInformation["currentApp"]
-    appBefore = currentApp
     if currentApp == "Homescreen" or storeInSystem:
         currentApp = "System"
     if not os.path.exists(storagePlace + "/Data/" + currentApp):
         os.mkdir(storagePlace + "/Data/" + currentApp)
     with open(storagePlace + "/Data/" + currentApp + "/" + nameOfData, "w+") as f:
         f.write(str(data))
-    currentApp = appBefore
     
 def getData(nameOfData):
     currentApp = confidentialInformation["currentApp"]
-    appBefore = currentApp
     if currentApp == "Homescreen":
         currentApp = "System"
-        isSystem = True
-    else:
-        currentApp = confidentialInformation["currentApp"]
-        isSystem = False
     if os.path.exists(storagePlace + "/Data/" + currentApp + "/" + nameOfData):
         with open(storagePlace + "/Data/" + currentApp + "/" + nameOfData, "r") as f:
             return f.read()
@@ -467,7 +459,7 @@ Runtime.getRuntime().gc()
 setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
 makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved)
 setPenColor("White")
-sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFaktor": rescaleImageWithFaktor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings}
+sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings}
 additionalSharedDict = {"downloadApp": downloadApp, "loadAvailableApps": loadAvailableApps, "getDownloadedApps": getDownloadedApps}
 
 neededUI = {
