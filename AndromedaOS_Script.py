@@ -237,7 +237,7 @@ def addAppsToHomescreen():
     horizontalApps = 0
     width = userSettings["screenWidth"]
     height = userSettings["screenHeight"]
-    t1 = clock()
+#    t1 = clock()
     while verticalDistance > userSettings["maxVerticalSpaceBetweenApps"]:
         verticalApps += 1
         check = height - 2*userSettings["verticalSpace"]
@@ -246,7 +246,7 @@ def addAppsToHomescreen():
         horizontalApps += 1
         check = width - 2*userSettings["horizontalSpace"]
         horizontalDistance = check // horizontalApps
-    t2 = clock()
+#    t2 = clock()
     centerpointY = height/2 - userSettings["verticalSpace"]
     centerpointX = 0 - (width/2 - userSettings["horizontalSpace"])
     counter = 1
@@ -271,11 +271,11 @@ def addAppsToHomescreen():
             centerpointX += horizontalDistance
         counter += 1
     clickableUI = homescreenUI
-    t3 = clock()
+#    t3 = clock()
     addUICorners()
-    t4 = clock()
+#    t4 = clock()
     loadUI()
-    t5 = clock()
+#    t5 = clock()
     #print "inside:", round(t2-t1, 2), t3-t2, t4-t3, t5-t4
     del verticalApps
     del verticalDistance
@@ -403,27 +403,32 @@ def updateAppSetup(newAppSetup):
     currentApp = confidentialInformation["currentApp"]
     confidentialInformation["downloadedAppData"][currentApp] = newAppSetup
 
-def storeData(nameOfData, data, storeInSystem = False):
+def storeData(nameOfData, data, additionalPath = ""): #, storeInSystem = False
     currentApp = confidentialInformation["currentApp"]
-    if currentApp == "Homescreen" or storeInSystem:
+    if currentApp == "Homescreen":# or storeInSystem:
         currentApp = "System"
     if not os.path.exists(storagePlace + "/Data/" + currentApp):
         os.mkdir(storagePlace + "/Data/" + currentApp)
-    with open(storagePlace + "/Data/" + currentApp + "/" + nameOfData, "w+") as f:
+    alreadyMadePath = "/"
+    for l in additionalPath.split("/"):
+        if not os.path.exists(storagePlace + "/Data/" + currentApp + alreadyMadePath + l):
+            os.mkdir(storagePlace + "/Data/" + currentApp + alreadyMadePath + l)
+        alreadyMadePath += l + "/"
+    with open(storagePlace + "/Data/" + currentApp + "/" + alreadyMadePath + nameOfData, "w+") as f:
         f.write(str(data))
     
-def getData(nameOfData):
+def getData(nameOfData, additionalFolderPath = ""):
     currentApp = confidentialInformation["currentApp"]
     if currentApp == "Homescreen":
         currentApp = "System"
-    if os.path.exists(storagePlace + "/Data/" + currentApp + "/" + nameOfData):
-        with open(storagePlace + "/Data/" + currentApp + "/" + nameOfData, "r") as f:
+    if additionalFolderPath != "":
+        additionalFolderPath += "/"
+    if os.path.exists(storagePlace + "/Data/" + currentApp + "/" + additionalFolderPath + nameOfData):
+        with open(storagePlace + "/Data/" + currentApp + "/" + additionalFolderPath + nameOfData, "r") as f:
             return f.read()
     else:
         print "Error in getData: file doesn't exist."
         print "Searched place for getData:", storagePlace + "/Data/" + currentApp + "/" + nameOfData
-    if isSystem:
-        currentApp = "Homescreen"
         
 def text(text, size, **settings):
     #available settings: font, style, color, maxLineBreak, maxTextLength
