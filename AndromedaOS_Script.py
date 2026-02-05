@@ -25,7 +25,7 @@ userSettings = {
 "darkMode": False,
 "playIntro": True,
 "doGC": True,
-"ableToClick": True,
+"new": False,
 }
 
 storagePlace = os.getcwd().replace("\\", "/")
@@ -41,6 +41,14 @@ confidentialInformation = {
 }
 
 sharedDict = {}
+
+#custom error class
+
+class AndromedaOSError(globals()["__builtins__"]["Exception"]):
+    def __init__(self, *msg):
+        newMsg = " ".join(msg)
+        newMsg += "\n---------------------------------------"
+        globals()["__builtins__"]["Exception"].__init__(self, newMsg)
 
 #Functions with which AndromedaOS runs
 def makeBackground():
@@ -74,9 +82,7 @@ def loadUI():
                         resclale = 1
                     drawImage(rescale, l["CenterPoint"][0], l["CenterPoint"][1])
                 else:
-                    print "Error in loadUI: Missing Components. Logging important components below:"
-                    print "rescaling:", l["rescaling"], "(Note: Rescale can be None)"
-                    print "file:", l["file"]
+                    raise AndromedaOSError("Error in loadUI: Missing Components. Logging important components below:\n", "rescaling:", l["rescaling"], "(Note: Rescale can be None)\n", "file:", l["file"])
                 #print "loaded image was", image
                 del image
                 t2 = clock()
@@ -175,7 +181,7 @@ def getPictureSize(image_file): #Add security check that file exists!
 def rescaleImageWithSize(image_file, newSize, hasToBeSquare = False, preferedSide = "x"):
     pictureSize = getPictureSize(image_file)
     if (hasToBeSquare and (pictureSize[0] != pictureSize[1])):
-        print "Error in rescaleImage: Picture was not a square"
+        raise AndromedaOSError("Error in rescaleImage: Picture was not a square")
         return
     if (preferedSide == "x"):
         factor = newSize/pictureSize[0]
@@ -190,7 +196,7 @@ def rescaleImageWithSize(image_file, newSize, hasToBeSquare = False, preferedSid
 def rescaleImageWithFactor(image_file, newSizeAsFactor, hasToBeSquare = False):
     pictureSize = getPictureSize(image_file)
     if (hasToBeSquare and (pictureSize[0] != pictureSize[1])):
-        print "Error in rescaleImage: Picture was not a square"
+        raise AndromedaOSError("Error in rescaleImage: Picture was not a square")
         return
     newImageFile = getImage(image_file)
     newImage = scale(newImageFile, newSizeAsFactor, 0)
@@ -280,7 +286,7 @@ def addAppsToHomescreen():
             "appName": confidentialInformation["appNames"][counter-1],}
         centerpointY -= verticalDistance
         if (counter >= (verticalApps*horizontalApps)):
-            print "Error in addAppsToHomescreen: Had to load more apps than space available"
+            raise AndromedaOSError("Error in addAppsToHomescreen: Had to load more apps than space available")
             break
         if (counter % verticalApps) == 0:
             centerpointY = height/2 - userSettings["verticalSpace"]
@@ -340,7 +346,7 @@ def updateDomain(newDomain, callingFunction = None):
         loadUI()
         addUICorners()
     else:
-        print "Error in updateDomain: domain doesn't exist"
+        raise AndromedaOSError("Error in updateDomain: domain doesn't exist")
         return
     if callingFunction != None:
         if type(callingFunction) == list:
@@ -413,6 +419,18 @@ def confirmDownload():
         installApplication = False
     return installApplication
 
+def initialiseOS():
+    try:
+        os.mkdir(storagePlace + "/Data")
+        os.mkdir(storagePlace + "/Custom_UI")
+        os.mkdir(storagePlace + "/Custom_UI/Backgrounds")
+    except:
+        raise AndromedaOSError("Error in initialiseOS: Folders already exist")
+    userSettings["screenWidth"] = int(getScreenSize()[0]/3*2)
+    userSettings["screenHeight"] = int(getScreenSize()[1]/3*2)
+    calculateAppDistance()
+    userSettings["new"] = False
+
 def validateApp(appName):
     pass
 
@@ -444,8 +462,7 @@ def getData(nameOfData, additionalFolderPath = ""):
         with open(storagePlace + "/Data/" + currentApp + "/" + additionalFolderPath + nameOfData, "r") as f:
             return f.read()
     else:
-        print "Error in getData: file doesn't exist."
-        print "Searched place for getData:", storagePlace + "/Data/" + currentApp + "/" + nameOfData
+        raise AndromedaOSError("Error in getData: file doesn't exist.\n", "Searched place for getData:", storagePlace + "/Data/" + currentApp + "/" + nameOfData)
         
 def text(text, size, **settings):
     #available settings: font, style, color, maxLineBreak, maxTextLength
@@ -495,8 +512,9 @@ neededUI = {
 }
 
 ht()
+if userSettings["new"]:
+    initialiseOS()
 homescreenUI = {}
-calculateAppDistance()
 loadHomescreen()
 
 #Testing & Debugging
