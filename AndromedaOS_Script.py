@@ -26,6 +26,7 @@ userSettings = {
 "playIntro": True,
 "doGC": True,
 "new": False,
+"showPerformanceLogs": True,
 }
 
 storagePlace = os.getcwd().replace("\\", "/")
@@ -43,7 +44,6 @@ confidentialInformation = {
 sharedDict = {}
 
 #custom error class
-
 class AndromedaOSError(globals()["__builtins__"]["Exception"]):
     def __init__(self, *msg):
         newMsg = " ".join(msg)
@@ -60,33 +60,28 @@ def makeBackground():
     background = scale(background, autoRescale(1280, 800), 0)
     drawImage(background, 0, 0)
     del background
-    
+   
 def loadUI():
     for l in clickableUI.values():
         if l["file"] != None:
             t1 = clock()
             if type(l["file"]) == str:
                 image = l["file"]
-                if l["file"].startswith("C") and l["rescaling"] == None:
-                    drawImage(l["file"], l["CenterPoint"][0], l["CenterPoint"][1])
-                elif l["rescaling"] == None and (not l["file"].startswith("C")):
+                if not image.startswith("C:"):
+                    image = storagePlace + "/Applications/" + confidentialInformation["currentApp"] + "/" + image
+                if l["rescaling"] == None:
                     drawImage(image, l["CenterPoint"][0], l["CenterPoint"][1])
-                elif l["rescaling"] != None and l["file"].startswith("C"):
-                    rescale = rescaleImageWithFactor(l["file"], l["rescaling"])
-                    if rescale == None:
-                        resclale = 1
-                    drawImage(rescale, l["CenterPoint"][0], l["CenterPoint"][1])
-                elif l["rescaling"] != None and (not l["file"].startswith("C")):
+                elif l["rescaling"] != None:
                     rescale = rescaleImageWithFactor(image, l["rescaling"])
                     if rescale == None:
                         resclale = 1
                     drawImage(rescale, l["CenterPoint"][0], l["CenterPoint"][1])
                 else:
                     raise AndromedaOSError("Error in loadUI: Missing Components. Logging important components below:\n", "rescaling:", l["rescaling"], "(Note: Rescale can be None)\n", "file:", l["file"])
-                #print "loaded image was", image
-                del image
                 t2 = clock()
-                #print "time for loading UI is", t2-t1
+                if userSettings["showPerformanceLogs"]:
+                    print "loaded image was", image
+                    print "time for loading UI is", t2-t1
             if type(l["file"]) == list:
                 setPenColor(l["file"][4])
                 setPos(l["CenterPoint"][0], l["CenterPoint"][1])
@@ -146,7 +141,8 @@ def loadHomescreen():
     t3 = clock()
     addAppsToHomescreen() 
     t4 = clock()
-    #print t2-t1, t3-t2, t4-t3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+    if userSettings["showPerformanceLogs"]:
+        print "loadHomescren is", t2-t1, t3-t2, t4-t3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
     
 def onMousePressed(x, y):
     global clickableUI
@@ -168,7 +164,8 @@ def onMousePressed(x, y):
             
 def onMouseMoved(x, y):
     pass  
-            
+
+     
 def getPictureSize(image_file): #Add security check that file exists!
     img_file = File(image_file)
     image = ImageIO.read(img_file)
@@ -213,13 +210,16 @@ def autoRescale(currentScreenWidth, currentScreenHight, currentFactor = 1, preff
 
 def testScript():
     print "hi"
-    
+   
 def addUICorners():
     global clickabelUI
     for x in clickableUI.values():
         if x["file"] != None:
             if type(x["file"]) ==  str:
-                pictureSize = getPictureSize(x["file"])
+                image = x["file"]
+                if not image.startswith("C:"):
+                    image = storagePlace + "/Applications/" + confidentialInformation["currentApp"] + "/" + image
+                pictureSize = getPictureSize(image)
                 x["Corner1"] = [x["CenterPoint"][0]-(pictureSize[0]/2)*x["rescaling"], x["CenterPoint"][1]-(pictureSize[0]/2)*x["rescaling"]]
                 x["Corner2"] = [x["CenterPoint"][0]+(pictureSize[1]/2)*x["rescaling"], x["CenterPoint"][1]+(pictureSize[1]/2)*x["rescaling"]]
             elif type(x["file"]) == list:
@@ -319,6 +319,7 @@ def openApp(appName):
     clear()
     if type(confidentialInformation["downloadedAppData"][appName]["domains"]["main"]["background"]) == str:
         background = storagePlace + confidentialInformation["downloadedAppData"][appName]["domains"]["main"]["background"]
+        setPos(0, 0)
         drawImage(background)
     else:
         setPenColor("White")
@@ -327,7 +328,11 @@ def openApp(appName):
     for l in neededUI:
         clickableUI[l] = neededUI[l]
     confidentialInformation["currentApp"] = appName
+    c1 = clock()
     addUICorners()
+    c2 = clock()
+    if userSettings["showPerformanceLogs"]:
+        print "time to add corners: {}".format(c2-c1)
     loadUI()
     
 def updateDomain(newDomain, callingFunction = None):
