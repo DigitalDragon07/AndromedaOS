@@ -26,7 +26,7 @@ userSettings = {
 "playIntro": True,
 "doGC": True,
 "new": False,
-"showPerformanceLogs": True,
+"showPerformanceLogs": False,
 }
 
 storagePlace = os.getcwd().replace("\\", "/")
@@ -100,7 +100,7 @@ def loadUI():
                 elif style == "italic" or style == "Italic":
                     setFont(l["file"][1], Font.ITALIC, size)
                 else:
-                    raise Exception("Error in text: Not a valid style")
+                    raise AndromedaOSError("Error in text: Not a valid style")
                 if not maxTextLength == None:
                     amountOfLineBreak = 0
                     words = l["file"][0].split(" ")
@@ -109,14 +109,14 @@ def loadUI():
                     usedSpaceInTempList = 0
                     for x in words:
                         if getTextWidth(x) > maxTextLength:
-                            raise Exception("Error in loadUI: Word was longer then maxTextLength")
+                            raise AndromedaOSError("Error in loadUI: Word was longer then maxTextLength")
                         if maxTextLength < (usedSpaceInTempList + getTextWidth(x)):
                             actualList.append(tempList)
                             tempList = []
                             usedSpaceInTempList = 0
                             amountOfLineBreak += 1
                             if amountOfLineBreak > maxLineBreak:
-                                raise Exception("Error in loadUI: exceeded line break limit")
+                                raise AndromedaOSError("Error in loadUI: exceeded line break limit")
                         tempList.append(x)
                         usedSpaceInTempList += getTextWidth(x)
                     actualList.append(tempList)
@@ -471,8 +471,11 @@ def getData(nameOfData, additionalFolderPath = ""):
         
 def text(text, size, **settings):
     #available settings: font, style, color, maxLineBreak, maxTextLength
-    if "color" in settings:
-        color = settings["color"]
+    if "color" in settings or "colour" in settings:
+        if "color" in settings:
+            color = settings["color"]
+        else:
+            color = settings["colour"]
     else:
         color = "Black"
     if "font" in settings:
@@ -500,10 +503,12 @@ def text(text, size, **settings):
 #Starting procedure
 gc.collect()
 Runtime.getRuntime().gc()
+if (Runtime.getRuntime().maxMemory()-(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()))/(1024**2) < 500:
+    raise AndromedaOSError("Error in starting AndromedaOS: too little memory. Please restart TigerJython")
 setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
 makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved)
 setPenColor("White")
-sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings}
+sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings, "closeApp": closeApp}
 additionalSharedDict = {"downloadApp": downloadApp, "loadAvailableApps": loadAvailableApps, "getDownloadedApps": getDownloadedApps}
 
 neededUI = {
@@ -526,4 +531,3 @@ loadHomescreen()
 
 gc.collect()
 Runtime.getRuntime().gc()
-print "Hello World"
