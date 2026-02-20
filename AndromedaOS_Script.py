@@ -5,7 +5,7 @@ from gturtle import*
 from javax.imageio import ImageIO
 from java.io import File
 from java.awt import Toolkit
-from java.lang import*
+from java.lang import Runtime
 from time import*
 import os
 import math
@@ -14,8 +14,8 @@ import copy
 
 #necessary data (think about repositioning this section so no interference with the function which are stored in a variable occur)
 userSettings = {
-"screenWidth": 1280,
-"screenHeight": 800,
+"screenWidth": 2345,
+"screenHeight": 2345,
 "verticalSpace": 70,
 "horizontalSpace": 70,
 "maxVerticalSpaceBetweenApps": 100,
@@ -25,7 +25,7 @@ userSettings = {
 "darkMode": False,
 "playIntro": True,
 "doGC": True,
-"new": False,
+"new": True,
 "showPerformanceLogs": False,
 }
 
@@ -58,6 +58,7 @@ def makeBackground():
         background = storagePlace + userSettings["currentBackgroundPath"]
     background = getImage(background)
     background = scale(background, autoRescale(1280, 800), 0)
+    print getPictureSize(storagePlace + "/Default_UI/Background_1.png")[0]*autoRescale(1280, 800), getPictureSize(storagePlace + "/Default_UI/Background_1.png")[1]*autoRescale(1280, 800)
     drawImage(background, 0, 0)
     del background
    
@@ -431,10 +432,13 @@ def initialiseOS():
         os.mkdir(storagePlace + "/Custom_UI/Backgrounds")
     except:
         raise AndromedaOSError("Error in initialiseOS: Folders already exist")
-    userSettings["screenWidth"] = int(getScreenSize()[0]/3*2)
-    userSettings["screenHeight"] = int(getScreenSize()[1]/3*2)
+    userSettings["screenWidth"] = int(Toolkit.getDefaultToolkit().getScreenSize().width)
+    userSettings["screenHeight"] = int(Toolkit.getDefaultToolkit().getScreenSize().height)
+    rescale = autoRescale(userSettings["screenWidth"], userSettings["screenHeight"])
     calculateAppDistance()
     userSettings["new"] = False
+    storeData("userSettings", userSettings)
+    
 
 def validateApp(appName):
     pass
@@ -503,8 +507,17 @@ def text(text, size, **settings):
 #Starting procedure
 gc.collect()
 Runtime.getRuntime().gc()
+
 if (Runtime.getRuntime().maxMemory()-(Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()))/(1024**2) < 500:
     raise AndromedaOSError("Error in starting AndromedaOS: too little memory. Please restart TigerJython")
+
+try:
+    userSettings = eval(getData("userSettings"))
+    print userSettings
+except:
+    pass
+
+
 setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
 makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved)
 setPenColor("White")
@@ -531,3 +544,5 @@ loadHomescreen()
 
 gc.collect()
 Runtime.getRuntime().gc()
+print "Hello, World"
+print homescreenUI
