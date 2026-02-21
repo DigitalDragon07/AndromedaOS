@@ -1,5 +1,11 @@
 #Licensed under AndromedaOS LTD. For private use only. Piracy will be punished. See License for further information.
 
+#Pre-installs
+import os
+import sys
+storagePlace = os.getcwd().replace("\\", "/")
+sys.path.append(storagePlace + "/Packages")
+
 #Imports of libraries
 from gturtle import*
 from javax.imageio import ImageIO
@@ -7,7 +13,6 @@ from java.io import File
 from java.awt import Toolkit
 from java.lang import Runtime
 from time import*
-import os
 import math
 import gc
 import copy
@@ -28,8 +33,6 @@ userSettings = {
 "new": True,
 "showPerformanceLogs": False,
 }
-
-storagePlace = os.getcwd().replace("\\", "/")
 
 confidentialInformation = {
     "appsOnHomescreen": [],
@@ -67,18 +70,22 @@ def loadUI():
         if l["file"] != None:
             t1 = clock()
             if type(l["file"]) == str:
+                currentAppSetup = confidentialInformation
                 image = l["file"]
+                if confidentialInformation["currentApp"] == "Homescreen":
+                    appName = l["appName"]
+                else:
+                    appName = confidentialInformation["currentApp"]
+                f = confidentialInformation["downloadedAppData"][appName]
+                if l["rescaling"] == None:
+                    rescale = 1
+                else:
+                    rescale = l["rescaling"]
+                newRescale = autoRescale(f["screenWidth"], f["screenHeight"], rescale)
                 if not image.startswith("C:"):
                     image = storagePlace + "/Applications/" + confidentialInformation["currentApp"] + "/" + image
-                if l["rescaling"] == None:
-                    drawImage(image, l["CenterPoint"][0], l["CenterPoint"][1])
-                elif l["rescaling"] != None:
-                    rescale = rescaleImageWithFactor(image, l["rescaling"])
-                    if rescale == None:
-                        resclale = 1
-                    drawImage(rescale, l["CenterPoint"][0], l["CenterPoint"][1])
-                else:
-                    raise AndromedaOSError("Error in loadUI: Missing Components. Logging important components below:\n", "rescaling:", l["rescaling"], "(Note: Rescale can be None)\n", "file:", l["file"])
+                rescaledImage = rescaleImageWithFactor(image, newRescale)
+                drawImage(rescaledImage, l["CenterPoint"][0], l["CenterPoint"][1])
                 t2 = clock()
                 if userSettings["showPerformanceLogs"]:
                     print "loaded image was", image
@@ -143,7 +150,10 @@ def loadHomescreen():
     addAppsToHomescreen() 
     t4 = clock()
     if userSettings["showPerformanceLogs"]:
-        print "loadHomescren is", t2-t1, t3-t2, t4-t3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+        print "loadHomescren is", t2-t1, t3-t2, t4-t3
+        
+def makeIntro():
+    pass
     
 def onMousePressed(x, y):
     global clickableUI
@@ -165,7 +175,6 @@ def onMousePressed(x, y):
             
 def onMouseMoved(x, y):
     pass  
-
      
 def getPictureSize(image_file): #Add security check that file exists!
     img_file = File(image_file)
@@ -404,7 +413,10 @@ def downloadApp(appName, noPermissionNeeded = False, additionalData = {}):
         if folderName in confidentialInformation["defaultApps"]:
             for l in additionalSharedDict:
                 usedDict[l] = additionalSharedDict[l]
+        lastApp = confidentialInformation["currentApp"]
+        confidentialInformation["currentApp"] = appName.split("/")[0]
         execfile(storagePlace + "/Applications/" + appName, usedDict)#if nameError: storagePlace not defined appears, look that the shared dict is defined before
+        confidentialInformation["currentApp"] = lastApp
         appSetup = usedDict["appSetup"]
         for l in additionalData:
             appSetup[l] = additionalData[l]
@@ -473,6 +485,22 @@ def getData(nameOfData, additionalFolderPath = ""):
     else:
         raise AndromedaOSError("Error in getData: file doesn't exist.\n", "Searched place for getData:", storagePlace + "/Data/" + currentApp + "/" + nameOfData)
         
+def loadDictionary(nameOfFile):
+    currentApp = confidentialInformation["currentApp"]
+    if currentApp == "Homescreen":
+        if os.path.exists(storagePlace + "/System Setups/" + nameOfFile):
+            with open(storagePlace + "/System Setups/" + nameOfFile) as f:
+                x = f.read()
+                return x
+        else:
+            raise AndromedaOSError("Error in loadAppSetup: file doesn't exist.\n", "Searched place for loadAppSetup:", storagePlace + "/Applications/" + currentApp + "/" + nameOfFile)
+    if os.path.exists(storagePlace + "/Applications/" + currentApp + "/" + nameOfFile):
+        with open(storagePlace + "/Applications/" + currentApp + "/" + nameOfFile) as f:
+            x = f.read()
+            return x
+    else:
+        raise AndromedaOSError("Error in loadAppSetup: file doesn't exist.\n", "Searched place for loadAppSetup:", storagePlace + "/Applications/" + currentApp + "/" + nameOfFile)
+
 def text(text, size, **settings):
     #available settings: font, style, color, maxLineBreak, maxTextLength
     if "color" in settings or "colour" in settings:
@@ -521,18 +549,10 @@ except:
 setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
 makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved)
 setPenColor("White")
-sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings, "closeApp": closeApp}
+sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings, "closeApp": closeApp, "loadDictionary": loadDictionary}
 additionalSharedDict = {"downloadApp": downloadApp, "loadAvailableApps": loadAvailableApps, "getDownloadedApps": getDownloadedApps}
 
-neededUI = {
-"ExitSign":{
-    "CenterPoint": [userSettings["screenWidth"]/2-autoRescale(1280, 800, 0.03)*getPictureSize(storagePlace + "/Default_UI/Buttons/red-x.png")[0]/2, userSettings["screenHeight"]/2-autoRescale(1280, 800, 0.03)*getPictureSize(storagePlace + "/Default_UI/Buttons/red-x.png")[1]/2-8],
-    "Corner1":[],
-    "Corner2": [],
-    "linkedFunction": closeApp,
-    "file": (storagePlace + "/Default_UI/Buttons/red-x.png"),
-    "rescaling": 0.03},
-}
+neededUI = eval(loadDictionary("neededUI.txt"))
 
 ht()
 if userSettings["new"]:
@@ -545,4 +565,3 @@ loadHomescreen()
 gc.collect()
 Runtime.getRuntime().gc()
 print "Hello, World"
-print homescreenUI
