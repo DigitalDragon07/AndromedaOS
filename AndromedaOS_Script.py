@@ -42,6 +42,7 @@ confidentialInformation = {
     "downloadedAppData": {}, #Folder name
     "defaultApps": ["AppLoader", "Settings"], #Always the folder name
     "currentApp": "Homescreen", #Folder name, uses appNames
+    "currentDomain": None
 }
 
 sharedDict = {}
@@ -52,6 +53,15 @@ class AndromedaOSError(globals()["__builtins__"]["Exception"]):
         newMsg = " ".join(msg)
         newMsg += "\n---------------------------------------"
         globals()["__builtins__"]["Exception"].__init__(self, newMsg)
+    @staticmethod
+    def popupError(error, title = "Something bad happend"):
+        msgDlg(error, title = title)
+    @staticmethod
+    def warn(warning):
+        print "AndromedaOS Warning:", warning
+    @staticmethod
+    def fatalError(error):
+        print "AndromedaOS Fatal Error:", error
 
 #Functions with which AndromedaOS runs
 def makeBackground():
@@ -88,8 +98,8 @@ def loadUI():
                 drawImage(rescaledImage, l["CenterPoint"][0], l["CenterPoint"][1])
                 t2 = clock()
                 if userSettings["showPerformanceLogs"]:
-                    print "loaded image was", image
-                    print "time for loading UI is", t2-t1
+                    print "[PERFORMANCE] loaded image was", image
+                    print "[PERFORMANCE] time for loading UI is", t2-t1
             if type(l["file"]) == list:
                 setPenColor(l["file"][4])
                 setPos(l["CenterPoint"][0], l["CenterPoint"][1])
@@ -150,7 +160,7 @@ def loadHomescreen():
     addAppsToHomescreen() 
     t4 = clock()
     if userSettings["showPerformanceLogs"]:
-        print "loadHomescren is", t2-t1, t3-t2, t4-t3
+        print "[PERFORMANCE] loadHomescren is", t2-t1, t3-t2, t4-t3
         
 def makeIntro():
     pass
@@ -319,6 +329,7 @@ def closeApp():
     if confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["closingFunction"] != None:
         confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["closingFunction"]()
     confidentialInformation["currentApp"] = "Homescreen"
+    confidentialInformation["currentDomain"] = None
     loadHomescreen()
     
 def openApp(appName):
@@ -338,11 +349,12 @@ def openApp(appName):
     for l in neededUI:
         clickableUI[l] = neededUI[l]
     confidentialInformation["currentApp"] = appName
+    confidentialInformation["currentDomain"] = "main"
     c1 = clock()
     addUICorners()
     c2 = clock()
     if userSettings["showPerformanceLogs"]:
-        print "time to add corners: {}".format(c2-c1)
+        print "[PERFORMANCE] time to add corners: {}".format(c2-c1)
     loadUI()
     
 def updateDomain(newDomain, callingFunction = None):
@@ -360,6 +372,7 @@ def updateDomain(newDomain, callingFunction = None):
             dot(10000)
         loadUI()
         addUICorners()
+        confidentialInformation["currentDomain"] = newDomain
     else:
         raise AndromedaOSError("Error in updateDomain: domain doesn't exist")
         return
@@ -369,6 +382,24 @@ def updateDomain(newDomain, callingFunction = None):
                 x()
         else:
             callingFunction()
+            
+def refresh():
+    global clickableUI
+    global storagePlace
+    currentDomain = confidentialInformation["currentDomain"]
+    if currentDomain == None:
+        raise AndromedaOSError("Error in reload: Domain was None")
+    clickableUI = confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["domains"][currentDomain]["clickableUI"]
+    for l in neededUI:
+        clickableUI[l] = neededUI[l]
+    if type(confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["domains"][currentDomain]["background"]) == str:
+        background = storagePlace + confidentialInformation["downloadedAppData"][currentidentialInformation["currentApp"]]["domains"][newDomain]["background"]
+        drawImage(background)
+    else:
+        setPenColor("White")
+        dot(10000)
+    loadUI()
+    addUICorners()
 
 def loadAvailableApps():
     global confidentialInformation
@@ -485,7 +516,7 @@ def getData(nameOfData, additionalFolderPath = ""):
     else:
         raise AndromedaOSError("Error in getData: file doesn't exist.\n", "Searched place for getData:", storagePlace + "/Data/" + currentApp + "/" + nameOfData)
         
-def loadDictionary(nameOfFile):
+def loadSetup(nameOfFile):
     currentApp = confidentialInformation["currentApp"]
     if currentApp == "Homescreen":
         if os.path.exists(storagePlace + "/System Setups/" + nameOfFile):
@@ -549,10 +580,10 @@ except:
 setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
 makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved)
 setPenColor("White")
-sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings, "closeApp": closeApp, "loadDictionary": loadDictionary}
+sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings, "closeApp": closeApp, "loadSetup": loadSetup}
 additionalSharedDict = {"downloadApp": downloadApp, "loadAvailableApps": loadAvailableApps, "getDownloadedApps": getDownloadedApps}
 
-neededUI = eval(loadDictionary("neededUI.txt"))
+neededUI = eval(loadSetup("neededUI.txt"))
 
 ht()
 if userSettings["new"]:
@@ -565,3 +596,5 @@ loadHomescreen()
 gc.collect()
 Runtime.getRuntime().gc()
 print "Hello, World"
+
+AndromedaOSError.fatalError("Test")
