@@ -74,7 +74,7 @@ def makeBackground():
     print getPictureSize(storagePlace + "/Default_UI/Background_1.png")[0]*autoRescale(1280, 800), getPictureSize(storagePlace + "/Default_UI/Background_1.png")[1]*autoRescale(1280, 800)
     drawImage(background, 0, 0)
     del background
-   
+
 def loadUI():
     for l in clickableUI.values():
         if l["file"] != None:
@@ -94,12 +94,14 @@ def loadUI():
                 newRescale = autoRescale(f["screenWidth"], f["screenHeight"], rescale)
                 if not image.startswith("C:"):
                     image = storagePlace + "/Applications/" + confidentialInformation["currentApp"] + "/" + image
-                rescaledImage = rescaleImageWithFactor(image, newRescale)
-                drawImage(rescaledImage, l["CenterPoint"][0], l["CenterPoint"][1])
                 t2 = clock()
+                rescaledImage = rescaleImageWithFactor(image, newRescale)
+                t3 = clock()
+                drawImage(rescaledImage, l["CenterPoint"][0], l["CenterPoint"][1])
+                t4 = clock()
                 if userSettings["showPerformanceLogs"]:
                     print "[PERFORMANCE] loaded image was", image
-                    print "[PERFORMANCE] time for loading UI is", t2-t1
+                    print "[PERFORMANCE] time for loading UI is", t2-t1, t3-t2, t4-t3, "(total time: {})".format(t4-t1)
             if type(l["file"]) == list:
                 setPenColor(l["file"][4])
                 setPos(l["CenterPoint"][0], l["CenterPoint"][1])
@@ -185,6 +187,18 @@ def onMousePressed(x, y):
             
 def onMouseMoved(x, y):
     pass  
+
+def onKeyPressed(e):
+    currentApp = confidentialInformation["currentApp"]
+    if currentApp != "Homescreen":
+        if "keyRegistration" in confidentialInformation["downloadedAppData"][currentApp]:
+            if confidentialInformation["downloadedAppData"][currentApp]["keyRegistration"] != None:
+                key = getKey()
+                code = getKeyCode()
+                if key == "":
+                    key = getModifiersText()
+                    code = getModifiers()
+                confidentialInformation["downloadedAppData"][currentApp]["keyRegistration"](key, code)
      
 def getPictureSize(image_file): #Add security check that file exists!
     img_file = File(image_file)
@@ -211,12 +225,18 @@ def rescaleImageWithSize(image_file, newSize, hasToBeSquare = False, preferedSid
     return [newImage, factor]
 
 def rescaleImageWithFactor(image_file, newSizeAsFactor, hasToBeSquare = False):
+    t1 = clock()
     pictureSize = getPictureSize(image_file)
+    t2 = clock()
     if (hasToBeSquare and (pictureSize[0] != pictureSize[1])):
         raise AndromedaOSError("Error in rescaleImage: Picture was not a square")
         return
     newImageFile = getImage(image_file)
+    t3 = clock()
     newImage = scale(newImageFile, newSizeAsFactor, 0)
+    t4 = clock()
+    if userSettings["showPerformanceLogs"]:
+        print "     [PERFORMANCE] times are:", t2-t1, t3-t2, t4-t3, "(total time: {})".format(t4-t1)
     return newImage
 
 def autoRescale(currentScreenWidth, currentScreenHight, currentFactor = 1, prefferWidth = True):
@@ -572,13 +592,11 @@ if (Runtime.getRuntime().maxMemory()-(Runtime.getRuntime().totalMemory()-Runtime
 
 try:
     userSettings = eval(getData("userSettings"))
-    print userSettings
 except:
     pass
 
-
 setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
-makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved)
+makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved, keyPressed = onKeyPressed)
 setPenColor("White")
 sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings, "closeApp": closeApp, "loadSetup": loadSetup}
 additionalSharedDict = {"downloadApp": downloadApp, "loadAvailableApps": loadAvailableApps, "getDownloadedApps": getDownloadedApps}
@@ -596,5 +614,3 @@ loadHomescreen()
 gc.collect()
 Runtime.getRuntime().gc()
 print "Hello, World"
-
-AndromedaOSError.fatalError("Test")
