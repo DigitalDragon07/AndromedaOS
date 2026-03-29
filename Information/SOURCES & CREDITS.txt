@@ -1,0 +1,13 @@
+SOURCES & CREDITS
+
+Sources used for research of different coding features:
+* www.w3schools.com
+* www.geeksforgeeks.org
+* www.coderivers.org
+* www.stackoverflow.com
+* www.python-forum.io
+* www.chatgpt.com #NOTE: I used ChatGPT ONLY for research! All of the code was written by me!
+
+Credits:
+* www.pixabay.com #Default background picture
+* My Sister for the App Loader and Settings Logo
