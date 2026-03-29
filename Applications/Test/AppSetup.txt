@@ -1,0 +1,34 @@
+{
+"name": "Test_App35",
+"icon": "iconForTest.png",
+"openingFunction": TheFirstTest,
+"closingFunction": None,
+"keyRegistration": keyRegistration,
+"mouseRegistration": mouseRegistration,
+"domains": {
+    "main": {
+        "clickableUI": {
+            "button1":{
+                "CenterPoint": [0, 0],
+                "Corner1":[],
+                "Corner2": [],
+                "linkedFunction": redirectToSecond,
+                "file": storagePlace + "/Applications/Test/background.png",
+                "rescaling": 0.1},
+            },
+        "background": None,
+        },
+    "second": {
+        "clickableUI": {
+            "button5":{
+                "CenterPoint": [200, 300],
+                "Corner1":[],
+                "Corner2": [],
+                "linkedFunction": None,
+                "file": (storagePlace + "/Default_UI/Buttons/TestPicture1.png"),
+                "rescaling": 0.5},
+            },
+        "background": None,
+        }
+    }
+}
