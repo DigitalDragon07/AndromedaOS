@@ -1,9 +1,0 @@
-{
-"ExitSign":{
-    "CenterPoint": [userSettings["screenWidth"]/2-autoRescale(1280, 800, 0.03)*getPictureSize(storagePlace + "/Default_UI/Buttons/red-x.png")[0]/2, userSettings["screenHeight"]/2-autoRescale(1280, 800, 0.03)*getPictureSize(storagePlace + "/Default_UI/Buttons/red-x.png")[1]/2-8],
-    "Corner1":[],
-    "Corner2": [],
-    "linkedFunction": closeApp,
-    "file": (storagePlace + "/Default_UI/Buttons/red-x.png"),
-    "rescaling": 0.03},
-}
