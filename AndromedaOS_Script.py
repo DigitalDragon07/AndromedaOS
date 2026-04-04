@@ -45,8 +45,6 @@ confidentialInformation = {
     "currentDomain": None
 }
 
-sharedDict = {}
-
 #custom error class
 class AndromedaOSError(globals()["__builtins__"]["Exception"]):
     def __init__(self, *msg):
@@ -59,9 +57,6 @@ class AndromedaOSError(globals()["__builtins__"]["Exception"]):
     @staticmethod
     def warn(warning):
         print "AndromedaOS Warning:", warning
-    @staticmethod
-    def fatalError(error):
-        print "AndromedaOS Fatal Error:", error
 
 #Functions with which AndromedaOS runs
 def makeBackground():
@@ -103,52 +98,53 @@ def loadUI():
                     print "[PERFORMANCE] loaded image was", image
                     print "[PERFORMANCE] time for loading UI is", t2-t1, t3-t2, t4-t3, "(total time: {})".format(t4-t1)
             if type(l["file"]) == list:
-                setPenColor(l["file"][4])
-                setPos(l["CenterPoint"][0], l["CenterPoint"][1])
-                style = l["file"][2]
-                rescale = l["rescaling"]
-                maxTextLength = l["file"][6]
-                maxLineBreak = l["file"][5]
-                if rescale == None:
-                    rescale = 1
-                size = l["file"][3]*rescale
-                size = int(round(size))
-                if style == "plain" or style == "Plain":     
-                    setFont(l["file"][1], Font.PLAIN, size)
-                elif style == "bold" or style == "Bold":
-                    setFont(l["file"][1], Font.BOLD, size)
-                elif style == "italic" or style == "Italic":
-                    setFont(l["file"][1], Font.ITALIC, size)
-                else:
-                    raise AndromedaOSError("Error in text: Not a valid style")
-                if not maxTextLength == None:
-                    amountOfLineBreak = 0
-                    words = l["file"][0].split(" ")
-                    tempList = []
-                    actualList = []
-                    usedSpaceInTempList = 0
-                    for x in words:
-                        if getTextWidth(x) > maxTextLength:
-                            raise AndromedaOSError("Error in loadUI: Word was longer then maxTextLength")
-                        if maxTextLength < (usedSpaceInTempList + getTextWidth(x)):
-                            actualList.append(tempList)
-                            tempList = []
-                            usedSpaceInTempList = 0
-                            amountOfLineBreak += 1
-                            if amountOfLineBreak > maxLineBreak:
-                                raise AndromedaOSError("Error in loadUI: exceeded line break limit")
-                        tempList.append(x)
-                        usedSpaceInTempList += getTextWidth(x)
-                    actualList.append(tempList)
-                    i = 1
-                    for x in actualList:
-                        for f in x:
-                            label(f + " ")
-                            setPos(getX() + getTextWidth(f + " "), getY())
-                        setPos(l["CenterPoint"][0], l["CenterPoint"][1]-getTextHeight()*i)
-                        i += 1
-                else:
-                    label(l["file"][0])
+                if l["file"][0] == "text":
+                    setPenColor(l["file"][5])
+                    setPos(l["CenterPoint"][0], l["CenterPoint"][1])
+                    style = l["file"][3]
+                    rescale = l["rescaling"]
+                    maxTextLength = l["file"][7]
+                    maxLineBreak = l["file"][6]
+                    if rescale == None:
+                        rescale = 1
+                    size = l["file"][4]*rescale
+                    size = int(round(size))
+                    if style == "plain" or style == "Plain":     
+                        setFont(l["file"][2], Font.PLAIN, size)
+                    elif style == "bold" or style == "Bold":
+                        setFont(l["file"][2], Font.BOLD, size)
+                    elif style == "italic" or style == "Italic":
+                        setFont(l["file"][2], Font.ITALIC, size)
+                    else:
+                        raise AndromedaOSError("Error in text: Not a valid style")
+                    if not maxTextLength == None:
+                        amountOfLineBreak = 0
+                        words = l["file"][1].split(" ")
+                        tempList = []
+                        actualList = []
+                        usedSpaceInTempList = 0
+                        for x in words:
+                            if getTextWidth(x) > maxTextLength:
+                                raise AndromedaOSError("Error in loadUI: Word was longer then maxTextLength")
+                            if maxTextLength < (usedSpaceInTempList + getTextWidth(x)):
+                                actualList.append(tempList)
+                                tempList = []
+                                usedSpaceInTempList = 0
+                                amountOfLineBreak += 1
+                                if amountOfLineBreak > maxLineBreak:
+                                    raise AndromedaOSError("Error in loadUI: exceeded line break limit")
+                            tempList.append(x)
+                            usedSpaceInTempList += getTextWidth(x)
+                        actualList.append(tempList)
+                        i = 1
+                        for x in actualList:
+                            for f in x:
+                                label(f + " ")
+                                setPos(getX() + getTextWidth(f + " "), getY())
+                            setPos(l["CenterPoint"][0], l["CenterPoint"][1]-getTextHeight()*i)
+                            i += 1
+                    else:
+                        label(l["file"][1])
     if userSettings["doGC"]:
         gc.collect()
         Runtime.getRuntime().gc()
@@ -183,7 +179,10 @@ def onMousePressed(x, y):
                         if "appName" in l:
                             openApp(l["appName"])
                         func()
-                        break
+                        try:
+                            confidentialInformation["downloadedAppData"][confidentialInformation["currentApp"]]["mouseRegistration"](x, y)
+                        finally:
+                            break
             
 def onMouseMoved(x, y):
     pass  
@@ -263,11 +262,12 @@ def addUICorners():
                 x["Corner1"] = [x["CenterPoint"][0]-(pictureSize[0]/2)*x["rescaling"], x["CenterPoint"][1]-(pictureSize[0]/2)*x["rescaling"]]
                 x["Corner2"] = [x["CenterPoint"][0]+(pictureSize[1]/2)*x["rescaling"], x["CenterPoint"][1]+(pictureSize[1]/2)*x["rescaling"]]
             elif type(x["file"]) == list:
-                x["Corner1"] = [x["CenterPoint"][0], x["CenterPoint"][1]-x["file"][7]*getTextHeight()]
-                if x["file"][7] == 0:
-                    x["Corner2"] = [getTextWidth(x["file"][0]) + x["CenterPoint"][0], getTextHeight()  + x["CenterPoint"][1]]
-                else:
-                    x["Corner2"] = [x["file"][6] + x["CenterPoint"][0], getTextHeight()  + x["CenterPoint"][1]]
+                if x["file"][0] == "text":
+                    x["Corner1"] = [x["CenterPoint"][0], x["CenterPoint"][1]-x["file"][8]*getTextHeight()]
+                    if x["file"][8] == 0:
+                        x["Corner2"] = [getTextWidth(x["file"][1]) + x["CenterPoint"][0], getTextHeight()  + x["CenterPoint"][1]]
+                    else:
+                        x["Corner2"] = [x["file"][7] + x["CenterPoint"][0], getTextHeight()  + x["CenterPoint"][1]]
             
 def test():
     print "Test successful"
@@ -452,13 +452,27 @@ def getStoragePlace():
 
 def getUserSettings():
     return copy.deepcopy(userSettings)
+
+def loadCodeExtensions():
+    extensionsList = File(storagePlace + "/Code Extensions").list()
+    globalDict = copy.deepcopy(sharedDict)
+    for i in extensionsList:
+        execfile(storagePlace + "/Code Extensions/" + i, globalDict)
+        if "__all__" in globalDict:
+            print globalDict
+            for j in globalDict["__all__"]:
+                globals()[j] = globalDict[j]
+                if "__append__" in globalDict and globalDict["__append__"]:
+                    sharedDict[j] = globalDict[j]
+                    print "added to shared dict"
+        else:
+            AndromedaOSError.warn("__all__ doesn't exist in code extension \"{}\". No code imported")
     
 def downloadApp(appName, noPermissionNeeded = False, additionalData = {}):
     global sharedDict
     global confidentialInformation
     global storagePlace
-    global sharedDict
-    usedDict = sharedDict.copy()
+    usedDict = copy.deepcopy(sharedDict)
     if noPermissionNeeded or confirmDownload():
         folderName = appName.split("/")[0]
         if folderName in confidentialInformation["defaultApps"]:
@@ -483,7 +497,7 @@ def downloadApp(appName, noPermissionNeeded = False, additionalData = {}):
         return False
 
 def confirmDownload():
-    installApplication = askYesNo("                                                                    Warning!\nApps which are added additionally could contain malicious code.\nOnly proceed if you trust the developer of this app. If your not sure please contact Oclona Studios. Du you want to install this application?", False)
+    installApplication = askYesNo("Warning!\nApps which are added additionally could contain malicious code.\nOnly proceed if you trust the developer of this app. If your not sure please contact Oclona Studios. Du you want to install this application?", False)
     if installApplication == None:
         installApplication = False
     return installApplication
@@ -581,7 +595,7 @@ def text(text, size, **settings):
         neededBreaks = getTextWidth(text)//maxTextLength
     else:
         neededBreaks = 0
-    return [text, font, style, size, color, maxLineBreak, maxTextLength, neededBreaks]
+    return ["text", text, font, style, size, color, maxLineBreak, maxTextLength, neededBreaks]
 
 #Starting procedure
 gc.collect()
@@ -598,9 +612,9 @@ except:
 setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
 makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved, keyPressed = onKeyPressed)
 setPenColor("White")
-sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings, "closeApp": closeApp, "loadSetup": loadSetup}
+sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings, "closeApp": closeApp, "loadSetup": loadSetup, "AndromedaOSError": AndromedaOSError}
 additionalSharedDict = {"downloadApp": downloadApp, "loadAvailableApps": loadAvailableApps, "getDownloadedApps": getDownloadedApps}
-
+loadCodeExtensions()
 neededUI = eval(loadSetup("neededUI.txt"))
 
 ht()
@@ -614,3 +628,5 @@ loadHomescreen()
 gc.collect()
 Runtime.getRuntime().gc()
 print "Hello, World"
+
+x = Button(0, 1, 2, 3)

@@ -8,13 +8,8 @@
 "domains": {
     "main": {
         "clickableUI": {
-            "button1":{
-                "CenterPoint": [0, 0],
-                "Corner1":[],
-                "Corner2": [],
-                "linkedFunction": redirectToSecond,
-                "file": storagePlace + "/Applications/Test/background.png",
-                "rescaling": 0.1},
+            "button1":
+            Button([0, 0], redirectToSecond, storagePlace + "/Applications/Test/background.png", 1)
             },
         "background": None,
         },

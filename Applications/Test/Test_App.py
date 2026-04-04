@@ -20,6 +20,5 @@ def keyRegistration(key, code):
 def mouseRegistration(x, y):
     print x, y
        
-print "globals are", globals()
 appSetup = eval(loadSetup("AppSetup.txt"))
 
