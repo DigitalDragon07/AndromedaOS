@@ -71,80 +71,90 @@ def makeBackground():
     del background
 
 def loadUI():
+    t1 = clock()
+    def loadPicture(l, **setSettings):
+        for i in setSettings:
+            print i
+            l[i] = setSettings[i]
+            print l[i]
+        image = l["file"]
+        if confidentialInformation["currentApp"] == "Homescreen":
+            appName = l["appName"]
+        else:
+            appName = confidentialInformation["currentApp"]
+        f = confidentialInformation["downloadedAppData"][appName]
+        if l["rescaling"] == None:
+            rescale = 1
+        else:
+            rescale = l["rescaling"]
+        newRescale = autoRescale(f["screenWidth"], f["screenHeight"], rescale)
+        if not image.startswith("C:"):
+            image = storagePlace + "/Applications/" + confidentialInformation["currentApp"] + "/" + image
+        t2 = clock()
+        rescaledImage = rescaleImageWithFactor(image, newRescale)
+        t3 = clock()
+        drawImage(rescaledImage, l["CenterPoint"][0], l["CenterPoint"][1])
+        t4 = clock()
+        if userSettings["showPerformanceLogs"]:
+            print "[PERFORMANCE] loaded image was", image
+            print "[PERFORMANCE] time for loading UI is", t2-t1, t3-t2, t4-t3, "(total time: {})".format(t4-t1)
+    def loadText(l):
+        setPenColor(l["file"][5])
+        setPos(l["CenterPoint"][0], l["CenterPoint"][1])
+        style = l["file"][3]
+        rescale = l["rescaling"]
+        maxTextLength = l["file"][7]
+        maxLineBreak = l["file"][6]
+        if rescale == None:
+            rescale = 1
+        size = l["file"][4]*rescale
+        size = int(round(size))
+        if style == "plain" or style == "Plain":     
+            setFont(l["file"][2], Font.PLAIN, size)
+        elif style == "bold" or style == "Bold":
+            setFont(l["file"][2], Font.BOLD, size)
+        elif style == "italic" or style == "Italic":
+            setFont(l["file"][2], Font.ITALIC, size)
+        else:
+            raise AndromedaOSError("Error in text: Not a valid style")
+        if not maxTextLength == None:
+            amountOfLineBreak = 0
+            words = l["file"][1].split(" ")
+            tempList = []
+            actualList = []
+            usedSpaceInTempList = 0
+            for x in words:
+                if getTextWidth(x) > maxTextLength:
+                    raise AndromedaOSError("Error in loadUI: Word was longer then maxTextLength")
+                if maxTextLength < (usedSpaceInTempList + getTextWidth(x)):
+                    actualList.append(tempList)
+                    tempList = []
+                    usedSpaceInTempList = 0
+                    amountOfLineBreak += 1
+                    if amountOfLineBreak > maxLineBreak:
+                        raise AndromedaOSError("Error in loadUI: exceeded line break limit")
+                tempList.append(x)
+                usedSpaceInTempList += getTextWidth(x)
+            actualList.append(tempList)
+            i = 1
+            for x in actualList:
+                for f in x:
+                    label(f + " ")
+                    setPos(getX() + getTextWidth(f + " "), getY())
+                setPos(l["CenterPoint"][0], l["CenterPoint"][1]-getTextHeight()*i)
+                i += 1
+        else:
+            label(l["file"][1])
     for l in clickableUI.values():
         if l["file"] != None:
-            t1 = clock()
             if type(l["file"]) == str:
-                currentAppSetup = confidentialInformation
-                image = l["file"]
-                if confidentialInformation["currentApp"] == "Homescreen":
-                    appName = l["appName"]
-                else:
-                    appName = confidentialInformation["currentApp"]
-                f = confidentialInformation["downloadedAppData"][appName]
-                if l["rescaling"] == None:
-                    rescale = 1
-                else:
-                    rescale = l["rescaling"]
-                newRescale = autoRescale(f["screenWidth"], f["screenHeight"], rescale)
-                if not image.startswith("C:"):
-                    image = storagePlace + "/Applications/" + confidentialInformation["currentApp"] + "/" + image
-                t2 = clock()
-                rescaledImage = rescaleImageWithFactor(image, newRescale)
-                t3 = clock()
-                drawImage(rescaledImage, l["CenterPoint"][0], l["CenterPoint"][1])
-                t4 = clock()
-                if userSettings["showPerformanceLogs"]:
-                    print "[PERFORMANCE] loaded image was", image
-                    print "[PERFORMANCE] time for loading UI is", t2-t1, t3-t2, t4-t3, "(total time: {})".format(t4-t1)
+                loadPicture(l)
             if type(l["file"]) == list:
                 if l["file"][0] == "text":
-                    setPenColor(l["file"][5])
-                    setPos(l["CenterPoint"][0], l["CenterPoint"][1])
-                    style = l["file"][3]
-                    rescale = l["rescaling"]
-                    maxTextLength = l["file"][7]
-                    maxLineBreak = l["file"][6]
-                    if rescale == None:
-                        rescale = 1
-                    size = l["file"][4]*rescale
-                    size = int(round(size))
-                    if style == "plain" or style == "Plain":     
-                        setFont(l["file"][2], Font.PLAIN, size)
-                    elif style == "bold" or style == "Bold":
-                        setFont(l["file"][2], Font.BOLD, size)
-                    elif style == "italic" or style == "Italic":
-                        setFont(l["file"][2], Font.ITALIC, size)
-                    else:
-                        raise AndromedaOSError("Error in text: Not a valid style")
-                    if not maxTextLength == None:
-                        amountOfLineBreak = 0
-                        words = l["file"][1].split(" ")
-                        tempList = []
-                        actualList = []
-                        usedSpaceInTempList = 0
-                        for x in words:
-                            if getTextWidth(x) > maxTextLength:
-                                raise AndromedaOSError("Error in loadUI: Word was longer then maxTextLength")
-                            if maxTextLength < (usedSpaceInTempList + getTextWidth(x)):
-                                actualList.append(tempList)
-                                tempList = []
-                                usedSpaceInTempList = 0
-                                amountOfLineBreak += 1
-                                if amountOfLineBreak > maxLineBreak:
-                                    raise AndromedaOSError("Error in loadUI: exceeded line break limit")
-                            tempList.append(x)
-                            usedSpaceInTempList += getTextWidth(x)
-                        actualList.append(tempList)
-                        i = 1
-                        for x in actualList:
-                            for f in x:
-                                label(f + " ")
-                                setPos(getX() + getTextWidth(f + " "), getY())
-                            setPos(l["CenterPoint"][0], l["CenterPoint"][1]-getTextHeight()*i)
-                            i += 1
-                    else:
-                        label(l["file"][1])
+                    loadText(l)
+                elif l["file"][0] == "on_off":
+                    pass
+                    
     if userSettings["doGC"]:
         gc.collect()
         Runtime.getRuntime().gc()
@@ -459,12 +469,10 @@ def loadCodeExtensions():
     for i in extensionsList:
         execfile(storagePlace + "/Code Extensions/" + i, globalDict)
         if "__all__" in globalDict:
-            print globalDict
             for j in globalDict["__all__"]:
                 globals()[j] = globalDict[j]
                 if "__append__" in globalDict and globalDict["__append__"]:
                     sharedDict[j] = globalDict[j]
-                    print "added to shared dict"
         else:
             AndromedaOSError.warn("__all__ doesn't exist in code extension \"{}\". No code imported")
     
@@ -490,8 +498,6 @@ def downloadApp(appName, noPermissionNeeded = False, additionalData = {}):
         confidentialInformation["appNamesWithFolder"].append(appName)
         appSetup = {}
         del usedDict
-        if confidentialInformation["currentApp"] == "Homescreen":
-            addAppsToHomescreen()
         return True
     else:
         return False
@@ -611,15 +617,16 @@ except:
 
 setPlaygroundSize(userSettings["screenWidth"], userSettings["screenHeight"])
 makeTurtle(mousePressed = onMousePressed, mouseMoved = onMouseMoved, keyPressed = onKeyPressed)
+ht()
 setPenColor("White")
+
+if userSettings["new"]:
+    initialiseOS()
+
 sharedDict = {"test": test, "getStoragePlace": getStoragePlace, "updateDomain": updateDomain, "updateAppSetup": updateAppSetup, "autoRescale": autoRescale, "rescaleImageWithSize": rescaleImageWithSize, "rescaleImageWithFactor": rescaleImageWithFactor, "storeData": storeData, "getData": getData, "text": text, "getUserSettings": getUserSettings, "closeApp": closeApp, "loadSetup": loadSetup, "AndromedaOSError": AndromedaOSError}
 additionalSharedDict = {"downloadApp": downloadApp, "loadAvailableApps": loadAvailableApps, "getDownloadedApps": getDownloadedApps}
 loadCodeExtensions()
 neededUI = eval(loadSetup("neededUI.txt"))
-
-ht()
-if userSettings["new"]:
-    initialiseOS()
 homescreenUI = {}
 loadHomescreen()
 
@@ -628,5 +635,3 @@ loadHomescreen()
 gc.collect()
 Runtime.getRuntime().gc()
 print "Hello, World"
-
-x = Button(0, 1, 2, 3)
