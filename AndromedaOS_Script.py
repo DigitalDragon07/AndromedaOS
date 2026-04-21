@@ -66,7 +66,6 @@ def makeBackground():
         background = storagePlace + userSettings["currentBackgroundPath"]
     background = getImage(background)
     background = scale(background, autoRescale(1280, 800), 0)
-    print getPictureSize(storagePlace + "/Default_UI/Background_1.png")[0]*autoRescale(1280, 800), getPictureSize(storagePlace + "/Default_UI/Background_1.png")[1]*autoRescale(1280, 800)
     drawImage(background, 0, 0)
     del background
 
@@ -145,7 +144,20 @@ def loadUI():
                 i += 1
         else:
             label(l["file"][1])
-    for l in clickableUI.values():
+    order = []
+    for i in clickableUI.values():
+        if not "sortPriority" in i:
+            i["sortPriority"] = 5
+        if order == []:
+            order.append(i)
+        else:
+            for j in range(len(order)):
+                if order[j] <= i["sortPriority"]:
+                    order.insert(j, i)
+                    break
+                if j == len(order)-1:
+                    order.append(i)
+    for l in order:
         if l["file"] != None:
             if type(l["file"]) == str:
                 loadPicture(l)
